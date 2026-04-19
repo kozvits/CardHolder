@@ -22,97 +22,103 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
 
-    - name: Check project structure
+    - name: Debug project structure
       run: |
-        echo "Current working directory: $(pwd)"
-        echo "Root directory contents:"
+        echo "=== Current directory ==="
+        pwd
+        echo "=== Root directory contents ==="
         ls -la
-        echo "All directories and files:"
-        find . -type f -name "*.gradle*" | head -20
-        echo "Looking for root project files:"
-        find . -maxdepth 3 -name "settings.gradle*" -o -name "build.gradle*" 2>/dev/null
-
-    - name: Find project root and setup
-      run: |
-        # Look for the main project root (where settings.gradle is)
-        ROOT_DIR=$(find . -name "settings.gradle*" -type f -print -quit 2>/dev/null | head -1 | xargs dirname 2>/dev/null)
-        if [ -n "$ROOT_DIR" ] && [ "$ROOT_DIR" != "." ]; then
-          PROJECT_ROOT=$(dirname "$ROOT_DIR")
-          echo "Found project root at: $PROJECT_ROOT"
-        else
-          # Try to find any build.gradle in parent directories
-          BUILD_FILE=$(find . -name "build.gradle*" -type f | grep -E "(^|/)build\.gradle" | head -1)
-          if [ -n "$BUILD_FILE" ]; then
-            PROJECT_ROOT=$(dirname "$BUILD_FILE")
-            echo "Found build file at: $BUILD_FILE, project root: $PROJECT_ROOT"
-          else
-            PROJECT_ROOT="."
-            echo "Using current directory as project root"
-          fi
-        fi
-        echo "PROJECT_ROOT=$PROJECT_ROOT" >> $GITHUB_ENV
+        echo "=== All files in repository ==="
+        find . -type f | sort
+        echo "=== Looking for Gradle files ==="
+        find . -name "*.gradle*" -o -name "gradlew*" 2>/dev/null || echo "No Gradle files found"
 
     - name: Setup Gradle
       uses: gradle/gradle-build-action@v2
 
-    - name: Make gradlew executable if exists
-      run: |
-        cd "$PROJECT_ROOT"
-        if [ -f "./gradlew" ]; then
-          echo "Making gradlew executable"
-          chmod +x ./gradlew
-        elif [ -f "../gradlew" ]; then
-          echo "Making ../gradlew executable"
-          chmod +x ../gradlew
-        fi
-
     - name: Build Project
       run: |
-        cd "$PROJECT_ROOT"
-        echo "Current directory: $(pwd)"
-        echo "Contents:"
+        echo "=== Attempting to build project ==="
+        
+        # Find the correct directory containing build files
+        BUILD_DIR_FOUND=false
+        
+        # Look for settings.gradle in current and parent directories
+        for dir in . .. ../..; do
+          if [ -f "$dir/settings.gradle" ] || [ -f "$dir/settings.gradle.kts" ]; then
+            echo "Found settings.gradle in $dir"
+            cd "$dir"
+            BUILD_DIR_FOUND=true
+            break
+          fi
+        done
+        
+        # If no settings.gradle found, look for build.gradle
+        if [ "$BUILD_DIR_FOUND" = false ]; then
+          for dir in . .. ../..; do
+            if [ -f "$dir/build.gradle" ] || [ -f "$dir/build.gradle.kts" ]; then
+              echo "Found build.gradle in $dir"
+              cd "$dir"
+              BUILD_DIR_FOUND=true
+              break
+            fi
+          done
+        fi
+        
+        # If still not found, stay in current directory
+        if [ "$BUILD_DIR_FOUND" = false ]; then
+          echo "No build directory found, staying in current directory"
+        fi
+        
+        echo "=== Current directory contents ==="
         ls -la
         
-        # Try different approaches to build
+        # Check for gradlew
         if [ -f "./gradlew" ]; then
-          echo "Building with ./gradlew"
+          echo "Using gradlew wrapper"
+          chmod +x ./gradlew
           ./gradlew assembleDebug --stacktrace
         elif [ -f "../gradlew" ]; then
-          echo "Building with ../gradlew"
+          echo "Using gradlew from parent directory"
+          chmod +x ../gradlew
           cd ..
           ./gradlew assembleDebug --stacktrace
-        elif [ -f "./gradle" ] || command -v gradle >/dev/null 2>&1; then
-          echo "Building with gradle command"
-          gradle assembleDebug --stacktrace
         else
-          echo "Creating basic gradle wrapper"
-          # Try to initialize gradle if nothing exists
-          gradle init --type basic
-          gradle assembleDebug --stacktrace
+          echo "No gradlew found, trying gradle command"
+          if command -v gradle &> /dev/null; then
+            gradle assembleDebug --stacktrace
+          else
+            echo "No gradle command available"
+            exit 1
+          fi
         fi
 
-    - name: Run Tests
+    - name: Run Tests and Lint
       run: |
-        cd "$PROJECT_ROOT"
+        echo "=== Running tests and lint ==="
+        
+        # Try to find the right directory again
+        BUILD_DIR_FOUND=false
+        for dir in . .. ../..; do
+          if [ -f "$dir/settings.gradle" ] || [ -f "$dir/settings.gradle.kts" ] || [ -f "$dir/build.gradle" ] || [ -f "$dir/build.gradle.kts" ]; then
+            cd "$dir"
+            BUILD_DIR_FOUND=true
+            break
+          fi
+        done
+        
         if [ -f "./gradlew" ]; then
           ./gradlew testDebugUnitTest --stacktrace
-        elif [ -f "../gradlew" ]; then
-          cd ..
-          ./gradlew testDebugUnitTest --stacktrace
-        else
-          gradle testDebugUnitTest --stacktrace
-        fi
-
-    - name: Run Lint
-      run: |
-        cd "$PROJECT_ROOT"
-        if [ -f "./gradlew" ]; then
           ./gradlew lintDebug --stacktrace
         elif [ -f "../gradlew" ]; then
           cd ..
+          ./gradlew testDebugUnitTest --stacktrace
           ./gradlew lintDebug --stacktrace
         else
-          gradle lintDebug --stacktrace
+          if command -v gradle &> /dev/null; then
+            gradle testDebugUnitTest --stacktrace
+            gradle lintDebug --stacktrace
+          fi
         fi
 
     - name: Upload Artifacts
