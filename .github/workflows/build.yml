@@ -84,9 +84,13 @@ jobs:
         echo 'exec "$JAVACMD" "$@"' >> gradlew
         chmod +x gradlew
 
+    - name: Create Directory Structure
+      run: |
+        mkdir -p app/src/main/java/com/example/nfccardmanager/{data,repository,viewmodel,ui,hce,adapter}
+        mkdir -p app/src/main/res/{xml,values,layout,mipmap-hdpi,drawable}
+
     - name: Create AndroidManifest.xml
       run: |
-        mkdir -p app/src/main/res/xml app/src/main/res/values app/src/main/res/mipmap-hdpi app/src/main/res/drawable
         echo '<?xml version="1.0" encoding="utf-8"?>' > app/src/main/AndroidManifest.xml
         echo '<manifest xmlns:android="http://schemas.android.com/apk/res/android">' >> app/src/main/AndroidManifest.xml
         echo '' >> app/src/main/AndroidManifest.xml
@@ -175,14 +179,618 @@ jobs:
 
     - name: Create launcher icon
       run: |
-        echo '<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">' > app/src/main/res/drawable/ic_launcher_foreground.xml
-        echo '    <path android:fillColor="#6200EE" android:pathData="M0,0h108v108h-108z"/>' >> app/src/main/res/drawable/ic_launcher_foreground.xml
-        echo '    <path android:fillColor="#FFFFFF" android:pathData="M54,30m-20,0a20,20 0,1 1,40 0a20,20 0,1 1,-40 0"/>' >> app/src/main/res/drawable/ic_launcher_foreground.xml
-        echo '</vector>' >> app/src/main/res/drawable/ic_launcher_foreground.xml
-        
         echo '<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">' > app/src/main/res/mipmap-hdpi/ic_launcher.xml
         echo '    <path android:fillColor="#6200EE" android:pathData="M0,0h108v108h-108z"/>' >> app/src/main/res/mipmap-hdpi/ic_launcher.xml
         echo '</vector>' >> app/src/main/res/mipmap-hdpi/ic_launcher.xml
+
+    - name: Create layout files
+      run: |
+        echo '<?xml version="1.0" encoding="utf-8"?>' > app/src/main/res/layout/activity_main.xml
+        echo '<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"' >> app/src/main/res/layout/activity_main.xml
+        echo '    xmlns:app="http://schemas.android.com/apk/res-auto"' >> app/src/main/res/layout/activity_main.xml
+        echo '    xmlns:tools="http://schemas.android.com/tools"' >> app/src/main/res/layout/activity_main.xml
+        echo '    android:layout_width="match_parent"' >> app/src/main/res/layout/activity_main.xml
+        echo '    android:layout_height="match_parent"' >> app/src/main/res/layout/activity_main.xml
+        echo '    tools:context=".ui.MainActivity">' >> app/src/main/res/layout/activity_main.xml
+        echo '' >> app/src/main/res/layout/activity_main.xml
+        echo '    <androidx.recyclerview.widget.RecyclerView' >> app/src/main/res/layout/activity_main.xml
+        echo '        android:id="@+id/recyclerView"' >> app/src/main/res/layout/activity_main.xml
+        echo '        android:layout_width="0dp"' >> app/src/main/res/layout/activity_main.xml
+        echo '        android:layout_height="0dp"' >> app/src/main/res/layout/activity_main.xml
+        echo '        app:layout_constraintBottom_toBottomOf="parent"' >> app/src/main/res/layout/activity_main.xml
+        echo '        app:layout_constraintEnd_toEndOf="parent"' >> app/src/main/res/layout/activity_main.xml
+        echo '        app:layout_constraintStart_toStartOf="parent"' >> app/src/main/res/layout/activity_main.xml
+        echo '        app:layout_constraintTop_toTopOf="parent" />' >> app/src/main/res/layout/activity_main.xml
+        echo '' >> app/src/main/res/layout/activity_main.xml
+        echo '    <com.google.android.material.floatingactionbutton.FloatingActionButton' >> app/src/main/res/layout/activity_main.xml
+        echo '        android:id="@+id/fabAdd"' >> app/src/main/res/layout/activity_main.xml
+        echo '        android:layout_width="wrap_content"' >> app/src/main/res/layout/activity_main.xml
+        echo '        android:layout_height="wrap_content"' >> app/src/main/res/layout/activity_main.xml
+        echo '        android:layout_margin="16dp"' >> app/src/main/res/layout/activity_main.xml
+        echo '        android:contentDescription="@string/app_name"' >> app/src/main/res/layout/activity_main.xml
+        echo '        app:layout_constraintBottom_toBottomOf="parent"' >> app/src/main/res/layout/activity_main.xml
+        echo '        app:layout_constraintEnd_toEndOf="parent"' >> app/src/main/res/layout/activity_main.xml
+        echo '        app:srcCompat="@android:drawable/ic_input_add" />' >> app/src/main/res/layout/activity_main.xml
+        echo '' >> app/src/main/res/layout/activity_main.xml
+        echo '</androidx.constraintlayout.widget.ConstraintLayout>' >> app/src/main/res/layout/activity_main.xml
+
+        echo '<?xml version="1.0" encoding="utf-8"?>' > app/src/main/res/layout/activity_scan.xml
+        echo '<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"' >> app/src/main/res/layout/activity_scan.xml
+        echo '    xmlns:app="http://schemas.android.com/apk/res-auto"' >> app/src/main/res/layout/activity_scan.xml
+        echo '    android:layout_width="match_parent"' >> app/src/main/res/layout/activity_scan.xml
+        echo '    android:layout_height="match_parent">' >> app/src/main/res/layout/activity_scan.xml
+        echo '' >> app/src/main/res/layout/activity_scan.xml
+        echo '    <TextView' >> app/src/main/res/layout/activity_scan.xml
+        echo '        android:id="@+id/textViewInstructions"' >> app/src/main/res/layout/activity_scan.xml
+        echo '        android:layout_width="wrap_content"' >> app/src/main/res/layout/activity_scan.xml
+        echo '        android:layout_height="wrap_content"' >> app/src/main/res/layout/activity_scan.xml
+        echo '        android:text="@string/scan_instructions"' >> app/src/main/res/layout/activity_scan.xml
+        echo '        android:textSize="18sp"' >> app/src/main/res/layout/activity_scan.xml
+        echo '        app:layout_constraintBottom_toBottomOf="parent"' >> app/src/main/res/layout/activity_scan.xml
+        echo '        app:layout_constraintEnd_toEndOf="parent"' >> app/src/main/res/layout/activity_scan.xml
+        echo '        app:layout_constraintStart_toStartOf="parent"' >> app/src/main/res/layout/activity_scan.xml
+        echo '        app:layout_constraintTop_toTopOf="parent" />' >> app/src/main/res/layout/activity_scan.xml
+        echo '' >> app/src/main/res/layout/activity_scan.xml
+        echo '</androidx.constraintlayout.widget.ConstraintLayout>' >> app/src/main/res/layout/activity_scan.xml
+
+        echo '<?xml version="1.0" encoding="utf-8"?>' > app/src/main/res/layout/item_card.xml
+        echo '<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"' >> app/src/main/res/layout/item_card.xml
+        echo '    xmlns:app="http://schemas.android.com/apk/res-auto"' >> app/src/main/res/layout/item_card.xml
+        echo '    android:layout_width="match_parent"' >> app/src/main/res/layout/item_card.xml
+        echo '    android:layout_height="wrap_content"' >> app/src/main/res/layout/item_card.xml
+        echo '    android:layout_margin="8dp"' >> app/src/main/res/layout/item_card.xml
+        echo '    app:cardCornerRadius="8dp"' >> app/src/main/res/layout/item_card.xml
+        echo '    app:cardElevation="4dp">' >> app/src/main/res/layout/item_card.xml
+        echo '' >> app/src/main/res/layout/item_card.xml
+        echo '    <LinearLayout' >> app/src/main/res/layout/item_card.xml
+        echo '        android:layout_width="match_parent"' >> app/src/main/res/layout/item_card.xml
+        echo '        android:layout_height="wrap_content"' >> app/src/main/res/layout/item_card.xml
+        echo '        android:orientation="vertical"' >> app/src/main/res/layout/item_card.xml
+        echo '        android:padding="16dp">' >> app/src/main/res/layout/item_card.xml
+        echo '' >> app/src/main/res/layout/item_card.xml
+        echo '        <TextView' >> app/src/main/res/layout/item_card.xml
+        echo '            android:id="@+id/textViewUid"' >> app/src/main/res/layout/item_card.xml
+        echo '            android:layout_width="wrap_content"' >> app/src/main/res/layout/item_card.xml
+        echo '            android:layout_height="wrap_content"' >> app/src/main/res/layout/item_card.xml
+        echo '            android:textStyle="bold"' >> app/src/main/res/layout/item_card.xml
+        echo '            android:textSize="16sp" />' >> app/src/main/res/layout/item_card.xml
+        echo '' >> app/src/main/res/layout/item_card.xml
+        echo '        <TextView' >> app/src/main/res/layout/item_card.xml
+        echo '            android:id="@+id/textViewType"' >> app/src/main/res/layout/item_card.xml
+        echo '            android:layout_width="wrap_content"' >> app/src/main/res/layout/item_card.xml
+        echo '            android:layout_height="wrap_content"' >> app/src/main/res/layout/item_card.xml
+        echo '            android:textSize="14sp"' >> app/src/main/res/layout/item_card.xml
+        echo '            android:textColor="@android:color/darker_gray" />' >> app/src/main/res/layout/item_card.xml
+        echo '' >> app/src/main/res/layout/item_card.xml
+        echo '    </LinearLayout>' >> app/src/main/res/layout/item_card.xml
+        echo '' >> app/src/main/res/layout/item_card.xml
+        echo '</androidx.cardview.widget.CardView>' >> app/src/main/res/layout/item_card.xml
+
+    - name: Create Kotlin Source Files
+      run: |
+        cat > app/src/main/java/com/example/nfccardmanager/data/Card.kt << 'KOTLINEOF'
+package com.example.nfccardmanager.data
+
+import androidx.room.Entity
+import androidx.room.PrimaryKey
+
+@Entity(tableName = "cards")
+data class Card(
+    @PrimaryKey(autoGenerate = true)
+    val id: Int = 0,
+    val uid: String,
+    val type: String,
+    val data: ByteArray,
+    val timestamp: Long = System.currentTimeMillis()
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+        other as Card
+        if (id != other.id) return false
+        if (uid != other.uid) return false
+        if (type != other.type) return false
+        if (!data.contentEquals(other.data)) return false
+        if (timestamp != other.timestamp) return false
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = id
+        result = 31 * result + uid.hashCode()
+        result = 31 * result + type.hashCode()
+        result = 31 * result + data.contentHashCode()
+        result = 31 * result + timestamp.hashCode()
+        return result
+    }
+}
+KOTLINEOF
+
+        cat > app/src/main/java/com/example/nfccardmanager/data/CardDao.kt << 'KOTLINEOF'
+package com.example.nfccardmanager.data
+
+import androidx.room.*
+import kotlinx.coroutines.flow.Flow
+
+@Dao
+interface CardDao {
+    @Query("SELECT * FROM cards")
+    fun getAllCards(): Flow<List<Card>>
+
+    @Query("SELECT * FROM cards WHERE uid = :uid LIMIT 1")
+    suspend fun getCardByUid(uid: String): Card?
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insert(card: Card): Long
+
+    @Delete
+    suspend fun delete(card: Card)
+
+    @Update
+    suspend fun update(card: Card)
+}
+KOTLINEOF
+
+        cat > app/src/main/java/com/example/nfccardmanager/data/CardDatabase.kt << 'KOTLINEOF'
+package com.example.nfccardmanager.data
+
+import android.content.Context
+import androidx.room.Database
+import androidx.room.Room
+import androidx.room.RoomDatabase
+
+@Database(entities = [Card::class], version = 1, exportSchema = false)
+abstract class CardDatabase : RoomDatabase() {
+    abstract fun cardDao(): CardDao
+
+    companion object {
+        @Volatile
+        private var INSTANCE: CardDatabase? = null
+
+        fun getDatabase(context: Context): CardDatabase {
+            return INSTANCE ?: synchronized(this) {
+                val instance = Room.databaseBuilder(
+                    context.applicationContext,
+                    CardDatabase::class.java,
+                    "card_database"
+                ).build()
+                INSTANCE = instance
+                instance
+            }
+        }
+    }
+}
+KOTLINEOF
+
+    - name: Create Repository and ViewModel
+      run: |
+        cat > app/src/main/java/com/example/nfccardmanager/repository/CardRepository.kt << 'KOTLINEOF'
+package com.example.nfccardmanager.repository
+
+import com.example.nfccardmanager.data.Card
+import com.example.nfccardmanager.data.CardDao
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.withContext
+
+class CardRepository(private val cardDao: CardDao) {
+    val allCards: Flow<List<Card>> = cardDao.getAllCards()
+
+    suspend fun getCardByUid(uid: String): Card? = withContext(Dispatchers.IO) {
+        cardDao.getCardByUid(uid)
+    }
+
+    suspend fun insert(card: Card): Long = withContext(Dispatchers.IO) {
+        cardDao.insert(card)
+    }
+
+    suspend fun delete(card: Card) = withContext(Dispatchers.IO) {
+        cardDao.delete(card)
+    }
+
+    suspend fun update(card: Card) = withContext(Dispatchers.IO) {
+        cardDao.update(card)
+    }
+}
+KOTLINEOF
+
+        cat > app/src/main/java/com/example/nfccardmanager/viewmodel/CardViewModel.kt << 'KOTLINEOF'
+package com.example.nfccardmanager.viewmodel
+
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.nfccardmanager.data.Card
+import com.example.nfccardmanager.data.CardDatabase
+import com.example.nfccardmanager.repository.CardRepository
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.launch
+
+class CardViewModel(application: Application) : AndroidViewModel(application) {
+    private val repository: CardRepository
+
+    init {
+        val cardDao = CardDatabase.getDatabase(application).cardDao()
+        repository = CardRepository(cardDao)
+    }
+
+    val allCards: Flow<List<Card>> = repository.allCards
+
+    fun insert(card: Card) = viewModelScope.launch {
+        repository.insert(card)
+    }
+
+    fun delete(card: Card) = viewModelScope.launch {
+        repository.delete(card)
+    }
+
+    fun update(card: Card) = viewModelScope.launch {
+        repository.update(card)
+    }
+}
+KOTLINEOF
+
+    - name: Create HCE Service
+      run: |
+        cat > app/src/main/java/com/example/nfccardmanager/hce/CardEmulationService.kt << 'KOTLINEOF'
+package com.example.nfccardmanager.hce
+
+import android.nfc.cardemulation.HostApduService
+import android.os.Bundle
+import android.util.Log
+
+class CardEmulationService : HostApduService() {
+    companion object {
+        private const val TAG = "CardEmulationService"
+        var emulatedCardData: ByteArray? = null
+    }
+
+    override fun processCommandApdu(commandApdu: ByteArray, extras: Bundle?): ByteArray {
+        Log.d(TAG, "Received APDU: ${commandApdu.contentToString()}")
+        
+        emulatedCardData?.let {
+            return it + byteArrayOf(0x90.toByte(), 0x00.toByte())
+        }
+        
+        return byteArrayOf(0x6A.toByte(), 0x82.toByte())
+    }
+
+    override fun onDeactivated(reason: Int) {
+        Log.d(TAG, "Card emulation deactivated, reason: $reason")
+    }
+}
+KOTLINEOF
+
+    - name: Create Adapter
+      run: |
+        cat > app/src/main/java/com/example/nfccardmanager/adapter/CardAdapter.kt << 'KOTLINEOF'
+package com.example.nfccardmanager.adapter
+
+import android.view.LayoutInflater
+import android.view.ViewGroup
+import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.ListAdapter
+import androidx.recyclerview.widget.RecyclerView
+import com.example.nfccardmanager.data.Card
+import com.example.nfccardmanager.databinding.ItemCardBinding
+
+class CardAdapter(
+    private val onItemClick: (Card) -> Unit
+) : ListAdapter<Card, CardAdapter.CardViewHolder>(CardDiffCallback()) {
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): CardViewHolder {
+        val binding = ItemCardBinding.inflate(
+            LayoutInflater.from(parent.context),
+            parent,
+            false
+        )
+        return CardViewHolder(binding)
+    }
+
+    override fun onBindViewHolder(holder: CardViewHolder, position: Int) {
+        holder.bind(getItem(position))
+    }
+
+    inner class CardViewHolder(
+        private val binding: ItemCardBinding
+    ) : RecyclerView.ViewHolder(binding.root) {
+        
+        init {
+            binding.root.setOnClickListener {
+                val position = adapterPosition
+                if (position != RecyclerView.NO_POSITION) {
+                    onItemClick(getItem(position))
+                }
+            }
+        }
+
+        fun bind(card: Card) {
+            binding.textViewUid.text = card.uid
+            binding.textViewType.text = card.type
+        }
+    }
+
+    class CardDiffCallback : DiffUtil.ItemCallback<Card>() {
+        override fun areItemsTheSame(oldItem: Card, newItem: Card): Boolean {
+            return oldItem.id == newItem.id
+        }
+
+        override fun areContentsTheSame(oldItem: Card, newItem: Card): Boolean {
+            return oldItem == newItem
+        }
+    }
+}
+KOTLINEOF
+
+    - name: Create UI Activities
+      run: |
+        cat > app/src/main/java/com/example/nfccardmanager/ui/MainActivity.kt << 'KOTLINEOF'
+package com.example.nfccardmanager.ui
+
+import android.content.Intent
+import android.os.Bundle
+import android.widget.Toast
+import androidx.activity.viewModels
+import androidx.appcompat.app.AppCompatActivity
+import androidx.recyclerview.widget.LinearLayoutManager
+import com.example.nfccardmanager.adapter.CardAdapter
+import com.example.nfccardmanager.databinding.ActivityMainBinding
+import com.example.nfccardmanager.viewmodel.CardViewModel
+
+class MainActivity : AppCompatActivity() {
+    private lateinit var binding: ActivityMainBinding
+    private val viewModel: CardViewModel by viewModels()
+    private lateinit var adapter: CardAdapter
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+
+        setupRecyclerView()
+        
+        binding.fabAdd.setOnClickListener {
+            startActivity(Intent(this, ScanActivity::class.java))
+        }
+    }
+
+    private fun setupRecyclerView() {
+        adapter = CardAdapter { card ->
+            val intent = Intent(this, CardDetailActivity::class.java)
+            intent.putExtra("CARD_UID", card.uid)
+            startActivity(intent)
+        }
+        
+        binding.recyclerView.layoutManager = LinearLayoutManager(this)
+        binding.recyclerView.adapter = adapter
+        
+        viewModel.allCards.observe(this) { cards ->
+            adapter.submitList(cards)
+        }
+    }
+}
+KOTLINEOF
+
+        cat > app/src/main/java/com/example/nfccardmanager/ui/ScanActivity.kt << 'KOTLINEOF'
+package com.example.nfccardmanager.ui
+
+import android.app.PendingIntent
+import android.content.Intent
+import android.nfc.NfcAdapter
+import android.nfc.Tag
+import android.nfc.tech.MifareClassic
+import android.nfc.tech.MifareUltralight
+import android.os.Bundle
+import android.widget.Toast
+import androidx.activity.viewModels
+import androidx.appcompat.app.AppCompatActivity
+import com.example.nfccardmanager.data.Card
+import com.example.nfccardmanager.databinding.ActivityScanBinding
+import com.example.nfccardmanager.viewmodel.CardViewModel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+
+class ScanActivity : AppCompatActivity() {
+    private lateinit var binding: ActivityScanBinding
+    private lateinit var nfcAdapter: NfcAdapter
+    private lateinit var pendingIntent: PendingIntent
+    private val viewModel: CardViewModel by viewModels()
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        binding = ActivityScanBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+
+        nfcAdapter = NfcAdapter.getDefaultAdapter(this)
+        
+        pendingIntent = PendingIntent.getActivity(
+            this, 0, Intent(this, javaClass).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP),
+            PendingIntent.FLAG_MUTABLE
+        )
+    }
+
+    override fun onResume() {
+        super.onResume()
+        nfcAdapter.enableForegroundDispatch(this, pendingIntent, null, null)
+    }
+
+    override fun onPause() {
+        super.onPause()
+        nfcAdapter.disableForegroundDispatch(this)
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        if (intent.action == NfcAdapter.ACTION_TAG_DISCOVERED ||
+            intent.action == NfcAdapter.ACTION_TECH_DISCOVERED) {
+            val tag = intent.getParcelableExtra<Tag>(NfcAdapter.EXTRA_TAG)
+            tag?.let { readTag(it) }
+        }
+    }
+
+    private fun readTag(tag: Tag) {
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                when {
+                    MifareClassic::class.java.name in tag.techList -> {
+                        readMifareClassic(tag)
+                    }
+                    MifareUltralight::class.java.name in tag.techList -> {
+                        readMifareUltralight(tag)
+                    }
+                    else -> {
+                        runOnUiThread {
+                            Toast.makeText(this@ScanActivity, "Неподдерживаемый тип карты", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                runOnUiThread {
+                    Toast.makeText(this@ScanActivity, "Ошибка чтения: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+
+    private suspend fun readMifareClassic(tag: Tag) {
+        val mifareClassic = MifareClassic.get(tag)
+        try {
+            mifareClassic.connect()
+            val data = mutableListOf<ByteArray>()
+            for (sector in 0 until minOf(4, mifareClassic.sectorCount)) {
+                if (mifareClassic.authenticateSectorWithKeyA(sector, MifareClassic.KEY_DEFAULT)) {
+                    for (block in 0 until mifareClassic.getBlockCountInSector(sector)) {
+                        val blockIndex = mifareClassic.sectorToBlock(sector) + block
+                        data.add(mifareClassic.readBlock(blockIndex))
+                    }
+                }
+            }
+            val allData = data.flatMap { it.toList() }.toByteArray()
+            saveCard(tag.id.toHexString(), "Mifare Classic", allData)
+            mifareClassic.close()
+        } catch (e: Exception) {
+            mifareClassic.close()
+            throw e
+        }
+    }
+
+    private suspend fun readMifareUltralight(tag: Tag) {
+        val ultralight = MifareUltralight.get(tag)
+        try {
+            ultralight.connect()
+            val data = mutableListOf<ByteArray>()
+            for (page in 0..3) {
+                data.add(ultralight.readPages(page))
+            }
+            val allData = data.flatMap { it.toList() }.toByteArray()
+            saveCard(tag.id.toHexString(), "Mifare Ultralight", allData)
+            ultralight.close()
+        } catch (e: Exception) {
+            ultralight.close()
+            throw e
+        }
+    }
+
+    private suspend fun saveCard(uid: String, type: String, data: ByteArray) {
+        val existingCard = viewModel.allCards.value?.find { it.uid == uid }
+        if (existingCard != null) {
+            runOnUiThread {
+                Toast.makeText(this@ScanActivity, "Карта уже существует", Toast.LENGTH_SHORT).show()
+            }
+            return
+        }
+        
+        val card = Card(uid = uid, type = type, data = data)
+        viewModel.insert(card)
+        
+        runOnUiThread {
+            Toast.makeText(this@ScanActivity, "Карта сохранена", Toast.LENGTH_SHORT).show()
+            finish()
+        }
+    }
+
+    private fun ByteArray.toHexString(): String {
+        return joinToString("") { "%02x".format(it) }
+    }
+}
+KOTLINEOF
+
+        cat > app/src/main/java/com/example/nfccardmanager/ui/CardDetailActivity.kt << 'KOTLINEOF'
+package com.example.nfccardmanager.ui
+
+import android.nfc.cardemulation.CardEmulation
+import android.os.Bundle
+import android.widget.Toast
+import androidx.activity.viewModels
+import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.app.AppCompatActivity
+import com.example.nfccardmanager.data.Card
+import com.example.nfccardmanager.hce.CardEmulationService
+import com.example.nfccardmanager.viewmodel.CardViewModel
+
+class CardDetailActivity : AppCompatActivity() {
+    private val viewModel: CardViewModel by viewModels()
+    private var currentCard: Card? = null
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        
+        val cardUid = intent.getStringExtra("CARD_UID")
+        if (cardUid == null) {
+            finish()
+            return
+        }
+
+        viewModel.allCards.observe(this) { cards ->
+            currentCard = cards.find { it.uid == cardUid }
+            currentCard?.let { card ->
+                showCardDetails(card)
+            } ?: finish()
+        }
+    }
+
+    private fun showCardDetails(card: Card) {
+        AlertDialog.Builder(this)
+            .setTitle("UID: ${card.uid}")
+            .setMessage("Тип: ${card.type}\nДата: ${java.text.SimpleDateFormat("dd/MM/yyyy HH:mm", java.util.Locale.getDefault()).format(java.util.Date(card.timestamp))}")
+            .setPositiveButton("Эмулировать") { _, _ ->
+                startEmulation(card)
+            }
+            .setNegativeButton("Удалить") { _, _ ->
+                confirmDelete(card)
+            }
+            .setNeutralButton("Закрыть", null)
+            .show()
+    }
+
+    private fun startEmulation(card: Card) {
+        CardEmulationService.emulatedCardData = card.data
+        
+        val cardEmulation = CardEmulation.getInstance(this)
+        val service = android.content.ComponentName(this, CardEmulationService::class.java)
+        
+        if (cardEmulation.isDefaultServiceForCategory(service, CardEmulation.CATEGORY_OTHER)) {
+            Toast.makeText(this, "Эмуляция активна", Toast.LENGTH_SHORT).show()
+        } else {
+            Toast.makeText(this, "Необходимо установить приложение как сервис по умолчанию", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    private fun confirmDelete(card: Card) {
+        AlertDialog.Builder(this)
+            .setTitle("Удалить карту?")
+            .setMessage("Вы уверены, что хотите удалить эту карту?")
+            .setPositiveButton("Да") { _, _ ->
+                viewModel.delete(card)
+                Toast.makeText(this, "Карта удалена", Toast.LENGTH_SHORT).show()
+                finish()
+            }
+            .setNegativeButton("Отмена", null)
+            .show()
+    }
+}
+KOTLINEOF
 
     - name: Build Project
       run: ./gradlew assembleDebug --stacktrace
