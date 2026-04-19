@@ -21,65 +21,59 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
 
-    - name: Create Settings Gradle
+    - name: Create settings.gradle.kts
       run: |
-        cat > settings.gradle.kts << 'SETTINGS_EOF'
-pluginManagement {
-    repositories {
-        google()
-        mavenCentral()
-        gradlePluginPortal()
-    }
-}
+        echo "pluginManagement {" > settings.gradle.kts
+        echo "    repositories {" >> settings.gradle.kts
+        echo "        google()" >> settings.gradle.kts
+        echo "        mavenCentral()" >> settings.gradle.kts
+        echo "        gradlePluginPortal()" >> settings.gradle.kts
+        echo "    }" >> settings.gradle.kts
+        echo "}" >> settings.gradle.kts
+        echo "" >> settings.gradle.kts
+        echo "dependencyResolutionManagement {" >> settings.gradle.kts
+        echo "    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)" >> settings.gradle.kts
+        echo "    repositories {" >> settings.gradle.kts
+        echo "        google()" >> settings.gradle.kts
+        echo "        mavenCentral()" >> settings.gradle.kts
+        echo "    }" >> settings.gradle.kts
+        echo "}" >> settings.gradle.kts
+        echo "" >> settings.gradle.kts
+        echo 'rootProject.name = "CardHolder"' >> settings.gradle.kts
+        echo 'include(":app")' >> settings.gradle.kts
 
-dependencyResolutionManagement {
-    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
-    repositories {
-        google()
-        mavenCentral()
-    }
-}
-
-rootProject.name = "CardHolder"
-include(":app")
-SETTINGS_EOF
-
-    - name: Create Gradle Wrapper Properties
+    - name: Create Gradle wrapper
       run: |
         mkdir -p gradle/wrapper
-        cat > gradle/wrapper/gradle-wrapper.properties << 'PROPS_EOF'
-distributionBase=GRADLE_USER_HOME
-distributionPath=wrapper/dists
-distributionUrl=https://services.gradle.org/distributions/gradle-8.0-bin.zip
-networkTimeout=10000
-zipStoreBase=GRADLE_USER_HOME
-zipStorePath=wrapper/dists
-PROPS_EOF
+        echo "distributionBase=GRADLE_USER_HOME" > gradle/wrapper/gradle-wrapper.properties
+        echo "distributionPath=wrapper/dists" >> gradle/wrapper/gradle-wrapper.properties
+        echo "distributionUrl=https://services.gradle.org/distributions/gradle-8.0-bin.zip" >> gradle/wrapper/gradle-wrapper.properties
+        echo "networkTimeout=10000" >> gradle/wrapper/gradle-wrapper.properties
+        echo "zipStoreBase=GRADLE_USER_HOME" >> gradle/wrapper/gradle-wrapper.properties
+        echo "zipStorePath=wrapper/dists" >> gradle/wrapper/gradle-wrapper.properties
 
-    - name: Create Gradlew Script
+    - name: Create gradlew
       run: |
-        cat > gradlew << 'GRADLEW_EOF'
-#!/bin/sh
-app_path=$0
-while [ -h "$app_path" ]; do
-    ls=$( ls -ld "$app_path" )
-    link=${ls#*' -> '}
-    case $link in
-      /*) app_path=$link ;;
-      *) app_path=${app_path%/*}/$link ;;
-    esac
-done
-APP_BASE_NAME=${0##*/}
-APP_HOME=$( cd "${APP_HOME:-./}" > /dev/null && pwd -P ) || exit
-CLASSPATH=$APP_HOME/gradle/wrapper/gradle-wrapper.jar
-JAVACMD=java
-set -- \
-    "-Dorg.gradle.appname=$APP_BASE_NAME" \
-    -classpath "$CLASSPATH" \
-    org.gradle.wrapper.GradleWrapperMain \
-    "$@"
-exec "$JAVACMD" "$@"
-GRADLEW_EOF
+        echo "#!/bin/sh" > gradlew
+        echo "app_path="'$0' >> gradlew
+        echo "while [ -h "'$app_path'" ]; do" >> gradlew
+        echo "    ls=$( ls -ld "'$app_path'" )" >> gradlew
+        echo '    link=${ls#*'"'"' -> '"'"'}' >> gradlew
+        echo "    case "'$link'" in" >> gradlew
+        echo "      /*) app_path="'$link'" ;;" >> gradlew
+        echo "      *) app_path="'$'{app_path%/*}/$'link'" ;;" >> gradlew
+        echo "    esac" >> gradlew
+        echo "done" >> gradlew
+        echo 'APP_BASE_NAME=${0##*/}' >> gradlew
+        echo 'APP_HOME=$( cd "${APP_HOME:-./}" > /dev/null && pwd -P ) || exit' >> gradlew
+        echo 'CLASSPATH=$APP_HOME/gradle/wrapper/gradle-wrapper.jar' >> gradlew
+        echo 'JAVACMD=java' >> gradlew
+        echo 'set -- \' >> gradlew
+        echo '    "-Dorg.gradle.appname=$APP_BASE_NAME" \' >> gradlew
+        echo '    -classpath "$CLASSPATH" \' >> gradlew
+        echo '    org.gradle.wrapper.GradleWrapperMain \' >> gradlew
+        echo '    "$@"' >> gradlew
+        echo 'exec "$JAVACMD" "$@"' >> gradlew
         chmod +x gradlew
 
     - name: Build Project
