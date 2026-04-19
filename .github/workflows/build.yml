@@ -72,7 +72,11 @@ distributionUrl=https\://services.gradle.org/distributions/gradle-8.0-bin.zip
 zipStoreBase=GRADLE_USER_HOME
 zipStorePath=wrapper/dists
 EOF
-          
+        fi
+
+    - name: Create gradlew script
+      run: |
+        if [ ! -f "gradlew" ]; then
           cat > gradlew << 'EOF'
 #!/bin/sh
 
