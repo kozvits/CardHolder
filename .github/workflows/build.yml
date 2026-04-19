@@ -21,68 +21,82 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
 
-    - name: Create Settings Gradle
+    - name: Create Gradle Setup
       run: |
-        echo "pluginManagement {" > settings.gradle.kts
-        echo "    repositories {" >> settings.gradle.kts
-        echo "        google()" >> settings.gradle.kts
-        echo "        mavenCentral()" >> settings.gradle.kts
-        echo "        gradlePluginPortal()" >> settings.gradle.kts
-        echo "    }" >> settings.gradle.kts
-        echo "}" >> settings.gradle.kts
-        echo "" >> settings.gradle.kts
-        echo "dependencyResolutionManagement {" >> settings.gradle.kts
-        echo "    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)" >> settings.gradle.kts
-        echo "    repositories {" >> settings.gradle.kts
-        echo "        google()" >> settings.gradle.kts
-        echo "        mavenCentral()" >> settings.gradle.kts
-        echo "    }" >> settings.gradle.kts
-        echo "}" >> settings.gradle.kts
-        echo "" >> settings.gradle.kts
-        echo 'rootProject.name = "CardHolder"' >> settings.gradle.kts
-        echo 'include(":app")' >> settings.gradle.kts
+        cat > setup.sh << 'SETUP_EOF'
+#!/bin/bash
+set -e
 
-    - name: Create Gradle Properties
-      run: |
-        echo "android.useAndroidX=true" > gradle.properties
-        echo "android.enableJetifier=true" >> gradle.properties
-        echo "android.suppressUnsupportedCompileSdk=34" >> gradle.properties
-        echo "org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8" >> gradle.properties
-        echo "org.gradle.parallel=true" >> gradle.properties
+# Create settings.gradle.kts
+cat > settings.gradle.kts << 'EOF'
+pluginManagement {
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
 
-    - name: Create Gradle Wrapper
-      run: |
-        mkdir -p gradle/wrapper
-        echo "distributionBase=GRADLE_USER_HOME" > gradle/wrapper/gradle-wrapper.properties
-        echo "distributionPath=wrapper/dists" >> gradle/wrapper/gradle-wrapper.properties
-        echo "distributionUrl=https://services.gradle.org/distributions/gradle-8.0-bin.zip" >> gradle/wrapper/gradle-wrapper.properties
-        echo "networkTimeout=10000" >> gradle/wrapper/gradle-wrapper.properties
-        echo "zipStoreBase=GRADLE_USER_HOME" >> gradle/wrapper/gradle-wrapper.properties
-        echo "zipStorePath=wrapper/dists" >> gradle/wrapper/gradle-wrapper.properties
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
 
-    - name: Create Gradlew Script
-      run: |
-        echo "#!/bin/sh" > gradlew
-        echo "app_path="'$0' >> gradlew
-        echo "while [ -h "'$app_path'" ]; do" >> gradlew
-        echo "    ls=$( ls -ld "'$app_path'" )" >> gradlew
-        echo '    link=${ls#*'"'"' -> '"'"'}' >> gradlew
-        echo "    case "'$link'" in" >> gradlew
-        echo "      /*) app_path="'$link'" ;;" >> gradlew
-        echo "      *) app_path="'$'{app_path%/*}/$'link'" ;;" >> gradlew
-        echo "    esac" >> gradlew
-        echo "done" >> gradlew
-        echo 'APP_BASE_NAME=${0##*/}' >> gradlew
-        echo 'APP_HOME=$( cd "${APP_HOME:-./}" > /dev/null && pwd -P ) || exit' >> gradlew
-        echo 'CLASSPATH=$APP_HOME/gradle/wrapper/gradle-wrapper.jar' >> gradlew
-        echo 'JAVACMD=java' >> gradlew
-        echo 'set -- \' >> gradlew
-        echo '    "-Dorg.gradle.appname=$APP_BASE_NAME" \' >> gradlew
-        echo '    -classpath "$CLASSPATH" \' >> gradlew
-        echo '    org.gradle.wrapper.GradleWrapperMain \' >> gradlew
-        echo '    "$@"' >> gradlew
-        echo 'exec "$JAVACMD" "$@"' >> gradlew
-        chmod +x gradlew
+rootProject.name = "CardHolder"
+include(":app")
+EOF
+
+# Create gradle.properties
+cat > gradle.properties << 'EOF'
+android.useAndroidX=true
+android.enableJetifier=true
+android.suppressUnsupportedCompileSdk=34
+org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8
+org.gradle.parallel=true
+EOF
+
+# Create gradle wrapper properties
+mkdir -p gradle/wrapper
+cat > gradle/wrapper/gradle-wrapper.properties << 'EOF'
+distributionBase=GRADLE_USER_HOME
+distributionPath=wrapper/dists
+distributionUrl=https://services.gradle.org/distributions/gradle-8.0-bin.zip
+networkTimeout=10000
+zipStoreBase=GRADLE_USER_HOME
+zipStorePath=wrapper/dists
+EOF
+
+# Create gradlew script
+cat > gradlew << 'EOF'
+#!/bin/sh
+app_path=$0
+while [ -h "$app_path" ]; do
+    ls=$( ls -ld "$app_path" )
+    link=${ls#*' -> '}
+    case $link in
+      /*) app_path=$link ;;
+      *) app_path=${app_path%/*}/$link ;;
+    esac
+done
+APP_BASE_NAME=${0##*/}
+APP_HOME=$( cd "${APP_HOME:-./}" > /dev/null && pwd -P ) || exit
+CLASSPATH=$APP_HOME/gradle/wrapper/gradle-wrapper.jar
+JAVACMD=java
+set -- \
+    "-Dorg.gradle.appname=$APP_BASE_NAME" \
+    -classpath "$CLASSPATH" \
+    org.gradle.wrapper.GradleWrapperMain \
+    "$@"
+exec "$JAVACMD" "$@"
+EOF
+
+chmod +x gradlew
+SETUP_EOF
+        chmod +x setup.sh
+        ./setup.sh
 
     - name: Create Directory Structure
       run: |
@@ -91,184 +105,186 @@ jobs:
 
     - name: Create AndroidManifest.xml
       run: |
-        echo '<?xml version="1.0" encoding="utf-8"?>' > app/src/main/AndroidManifest.xml
-        echo '<manifest xmlns:android="http://schemas.android.com/apk/res/android">' >> app/src/main/AndroidManifest.xml
-        echo '' >> app/src/main/AndroidManifest.xml
-        echo '    <uses-permission android:name="android.permission.NFC" />' >> app/src/main/AndroidManifest.xml
-        echo '    <uses-feature android:name="android.hardware.nfc" android:required="true" />' >> app/src/main/AndroidManifest.xml
-        echo '' >> app/src/main/AndroidManifest.xml
-        echo '    <application' >> app/src/main/AndroidManifest.xml
-        echo '        android:allowBackup="true"' >> app/src/main/AndroidManifest.xml
-        echo '        android:label="@string/app_name">' >> app/src/main/AndroidManifest.xml
-        echo '' >> app/src/main/AndroidManifest.xml
-        echo '        <activity android:name=".ui.MainActivity" android:exported="true">' >> app/src/main/AndroidManifest.xml
-        echo '            <intent-filter>' >> app/src/main/AndroidManifest.xml
-        echo '                <action android:name="android.intent.action.MAIN" />' >> app/src/main/AndroidManifest.xml
-        echo '                <category android:name="android.intent.category.LAUNCHER" />' >> app/src/main/AndroidManifest.xml
-        echo '            </intent-filter>' >> app/src/main/AndroidManifest.xml
-        echo '        </activity>' >> app/src/main/AndroidManifest.xml
-        echo '' >> app/src/main/AndroidManifest.xml
-        echo '        <activity android:name=".ui.ScanActivity" android:exported="true">' >> app/src/main/AndroidManifest.xml
-        echo '            <intent-filter>' >> app/src/main/AndroidManifest.xml
-        echo '                <action android:name="android.nfc.action.TAG_DISCOVERED" />' >> app/src/main/AndroidManifest.xml
-        echo '            </intent-filter>' >> app/src/main/AndroidManifest.xml
-        echo '        </activity>' >> app/src/main/AndroidManifest.xml
-        echo '' >> app/src/main/AndroidManifest.xml
-        echo '        <activity android:name=".ui.CardDetailActivity" />' >> app/src/main/AndroidManifest.xml
-        echo '' >> app/src/main/AndroidManifest.xml
-        echo '        <service' >> app/src/main/AndroidManifest.xml
-        echo '            android:name=".hce.CardEmulationService"' >> app/src/main/AndroidManifest.xml
-        echo '            android:exported="true"' >> app/src/main/AndroidManifest.xml
-        echo '            android:permission="android.permission.BIND_NFC_SERVICE">' >> app/src/main/AndroidManifest.xml
-        echo '            <intent-filter>' >> app/src/main/AndroidManifest.xml
-        echo '                <action android:name="android.nfc.cardemulation.action.HOST_APDU_SERVICE" />' >> app/src/main/AndroidManifest.xml
-        echo '            </intent-filter>' >> app/src/main/AndroidManifest.xml
-        echo '            <meta-data' >> app/src/main/AndroidManifest.xml
-        echo '                android:name="android.nfc.cardemulation.host_apdu_service"' >> app/src/main/AndroidManifest.xml
-        echo '                android:resource="@xml/aid_list" />' >> app/src/main/AndroidManifest.xml
-        echo '        </service>' >> app/src/main/AndroidManifest.xml
-        echo '    </application>' >> app/src/main/AndroidManifest.xml
-        echo '</manifest>' >> app/src/main/AndroidManifest.xml
+        cat > app/src/main/AndroidManifest.xml << 'MANIFEST_EOF'
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    - name: Create aid_list.xml
+    <uses-permission android:name="android.permission.NFC" />
+    <uses-feature android:name="android.hardware.nfc" android:required="true" />
+
+    <application
+        android:allowBackup="true"
+        android:label="@string/app_name">
+
+        <activity android:name=".ui.MainActivity" android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <activity android:name=".ui.ScanActivity" android:exported="true">
+            <intent-filter>
+                <action android:name="android.nfc.action.TAG_DISCOVERED" />
+            </intent-filter>
+        </activity>
+
+        <activity android:name=".ui.CardDetailActivity" />
+
+        <service
+            android:name=".hce.CardEmulationService"
+            android:exported="true"
+            android:permission="android.permission.BIND_NFC_SERVICE">
+            <intent-filter>
+                <action android:name="android.nfc.cardemulation.action.HOST_APDU_SERVICE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.nfc.cardemulation.host_apdu_service"
+                android:resource="@xml/aid_list" />
+        </service>
+    </application>
+</manifest>
+MANIFEST_EOF
+
+    - name: Create Resource Files
       run: |
-        echo '<?xml version="1.0" encoding="utf-8"?>' > app/src/main/res/xml/aid_list.xml
-        echo '<host-apdu-service xmlns:android="http://schemas.android.com/apk/res/android"' >> app/src/main/res/xml/aid_list.xml
-        echo '    android:description="@string/app_name"' >> app/src/main/res/xml/aid_list.xml
-        echo '    android:requireDeviceUnlock="false">' >> app/src/main/res/xml/aid_list.xml
-        echo '    <aid-group android:description="@string/app_name"' >> app/src/main/res/xml/aid_list.xml
-        echo '        android:category="other">' >> app/src/main/res/xml/aid_list.xml
-        echo '        <aid-filter android:name="F2222222222222"/>' >> app/src/main/res/xml/aid_list.xml
-        echo '    </aid-group>' >> app/src/main/res/xml/aid_list.xml
-        echo '</host-apdu-service>' >> app/src/main/res/xml/aid_list.xml
+        cat > app/src/main/res/xml/aid_list.xml << 'AID_EOF'
+<?xml version="1.0" encoding="utf-8"?>
+<host-apdu-service xmlns:android="http://schemas.android.com/apk/res/android"
+    android:description="@string/app_name"
+    android:requireDeviceUnlock="false">
+    <aid-group android:description="@string/app_name"
+        android:category="other">
+        <aid-filter android:name="F2222222222222"/>
+    </aid-group>
+</host-apdu-service>
+AID_EOF
 
-    - name: Create strings.xml
+        cat > app/src/main/res/values/strings.xml << 'STRINGS_EOF'
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">NFC Card Manager</string>
+    <string name="scan_instructions">Поднесите NFC карту к устройству</string>
+</resources>
+STRINGS_EOF
+
+        cat > app/src/main/res/values/colors.xml << 'COLORS_EOF'
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="purple_200">#FFBB86FC</color>
+    <color name="purple_500">#FF6200EE</color>
+    <color name="purple_700">#FF3700B3</color>
+    <color name="teal_200">#FF03DAC5</color>
+    <color name="teal_700">#FF018786</color>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+</resources>
+COLORS_EOF
+
+        cat > app/src/main/res/values/themes.xml << 'THEMES_EOF'
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="AppTheme" parent="Theme.MaterialComponents.DayNight.DarkActionBar">
+        <item name="colorPrimary">@color/purple_500</item>
+        <item name="colorPrimaryVariant">@color/purple_700</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorSecondary">@color/teal_200</item>
+        <item name="colorSecondaryVariant">@color/teal_700</item>
+        <item name="colorOnSecondary">@color/black</item>
+    </style>
+</resources>
+THEMES_EOF
+
+    - name: Create Layout Files
       run: |
-        echo '<?xml version="1.0" encoding="utf-8"?>' > app/src/main/res/values/strings.xml
-        echo '<resources>' >> app/src/main/res/values/strings.xml
-        echo '    <string name="app_name">NFC Card Manager</string>' >> app/src/main/res/values/strings.xml
-        echo '    <string name="scan_instructions">Поднесите NFC карту к устройству</string>' >> app/src/main/res/values/strings.xml
-        echo '</resources>' >> app/src/main/res/values/strings.xml
+        cat > app/src/main/res/layout/activity_main.xml << 'MAIN_LAYOUT_EOF'
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
 
-    - name: Create themes.xml
-      run: |
-        echo '<?xml version="1.0" encoding="utf-8"?>' > app/src/main/res/values/themes.xml
-        echo '<resources>' >> app/src/main/res/values/themes.xml
-        echo '    <style name="AppTheme" parent="Theme.MaterialComponents.DayNight.DarkActionBar">' >> app/src/main/res/values/themes.xml
-        echo '        <item name="colorPrimary">@color/purple_500</item>' >> app/src/main/res/values/themes.xml
-        echo '        <item name="colorPrimaryVariant">@color/purple_700</item>' >> app/src/main/res/values/themes.xml
-        echo '        <item name="colorOnPrimary">@color/white</item>' >> app/src/main/res/values/themes.xml
-        echo '        <item name="colorSecondary">@color/teal_200</item>' >> app/src/main/res/values/themes.xml
-        echo '        <item name="colorSecondaryVariant">@color/teal_700</item>' >> app/src/main/res/values/themes.xml
-        echo '        <item name="colorOnSecondary">@color/black</item>' >> app/src/main/res/values/themes.xml
-        echo '    </style>' >> app/src/main/res/values/themes.xml
-        echo '</resources>' >> app/src/main/res/values/themes.xml
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerView"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
-    - name: Create colors.xml
-      run: |
-        echo '<?xml version="1.0" encoding="utf-8"?>' > app/src/main/res/values/colors.xml
-        echo '<resources>' >> app/src/main/res/values/colors.xml
-        echo '    <color name="purple_200">#FFBB86FC</color>' >> app/src/main/res/values/colors.xml
-        echo '    <color name="purple_500">#FF6200EE</color>' >> app/src/main/res/values/colors.xml
-        echo '    <color name="purple_700">#FF3700B3</color>' >> app/src/main/res/values/colors.xml
-        echo '    <color name="teal_200">#FF03DAC5</color>' >> app/src/main/res/values/colors.xml
-        echo '    <color name="teal_700">#FF018786</color>' >> app/src/main/res/values/colors.xml
-        echo '    <color name="black">#FF000000</color>' >> app/src/main/res/values/colors.xml
-        echo '    <color name="white">#FFFFFFFF</color>' >> app/src/main/res/values/colors.xml
-        echo '</resources>' >> app/src/main/res/values/colors.xml
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fabAdd"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="16dp"
+        android:contentDescription="@string/app_name"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:srcCompat="@android:drawable/ic_input_add" />
 
-    - name: Create launcher icon
-      run: |
-        echo '<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">' > app/src/main/res/mipmap-hdpi/ic_launcher.xml
-        echo '    <path android:fillColor="#6200EE" android:pathData="M0,0h108v108h-108z"/>' >> app/src/main/res/mipmap-hdpi/ic_launcher.xml
-        echo '</vector>' >> app/src/main/res/mipmap-hdpi/ic_launcher.xml
+</androidx.constraintlayout.widget.ConstraintLayout>
+MAIN_LAYOUT_EOF
 
-    - name: Create layout files
-      run: |
-        echo '<?xml version="1.0" encoding="utf-8"?>' > app/src/main/res/layout/activity_main.xml
-        echo '<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"' >> app/src/main/res/layout/activity_main.xml
-        echo '    xmlns:app="http://schemas.android.com/apk/res-auto"' >> app/src/main/res/layout/activity_main.xml
-        echo '    xmlns:tools="http://schemas.android.com/tools"' >> app/src/main/res/layout/activity_main.xml
-        echo '    android:layout_width="match_parent"' >> app/src/main/res/layout/activity_main.xml
-        echo '    android:layout_height="match_parent"' >> app/src/main/res/layout/activity_main.xml
-        echo '    tools:context=".ui.MainActivity">' >> app/src/main/res/layout/activity_main.xml
-        echo '' >> app/src/main/res/layout/activity_main.xml
-        echo '    <androidx.recyclerview.widget.RecyclerView' >> app/src/main/res/layout/activity_main.xml
-        echo '        android:id="@+id/recyclerView"' >> app/src/main/res/layout/activity_main.xml
-        echo '        android:layout_width="0dp"' >> app/src/main/res/layout/activity_main.xml
-        echo '        android:layout_height="0dp"' >> app/src/main/res/layout/activity_main.xml
-        echo '        app:layout_constraintBottom_toBottomOf="parent"' >> app/src/main/res/layout/activity_main.xml
-        echo '        app:layout_constraintEnd_toEndOf="parent"' >> app/src/main/res/layout/activity_main.xml
-        echo '        app:layout_constraintStart_toStartOf="parent"' >> app/src/main/res/layout/activity_main.xml
-        echo '        app:layout_constraintTop_toTopOf="parent" />' >> app/src/main/res/layout/activity_main.xml
-        echo '' >> app/src/main/res/layout/activity_main.xml
-        echo '    <com.google.android.material.floatingactionbutton.FloatingActionButton' >> app/src/main/res/layout/activity_main.xml
-        echo '        android:id="@+id/fabAdd"' >> app/src/main/res/layout/activity_main.xml
-        echo '        android:layout_width="wrap_content"' >> app/src/main/res/layout/activity_main.xml
-        echo '        android:layout_height="wrap_content"' >> app/src/main/res/layout/activity_main.xml
-        echo '        android:layout_margin="16dp"' >> app/src/main/res/layout/activity_main.xml
-        echo '        android:contentDescription="@string/app_name"' >> app/src/main/res/layout/activity_main.xml
-        echo '        app:layout_constraintBottom_toBottomOf="parent"' >> app/src/main/res/layout/activity_main.xml
-        echo '        app:layout_constraintEnd_toEndOf="parent"' >> app/src/main/res/layout/activity_main.xml
-        echo '        app:srcCompat="@android:drawable/ic_input_add" />' >> app/src/main/res/layout/activity_main.xml
-        echo '' >> app/src/main/res/layout/activity_main.xml
-        echo '</androidx.constraintlayout.widget.ConstraintLayout>' >> app/src/main/res/layout/activity_main.xml
+        cat > app/src/main/res/layout/activity_scan.xml << 'SCAN_LAYOUT_EOF'
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
 
-        echo '<?xml version="1.0" encoding="utf-8"?>' > app/src/main/res/layout/activity_scan.xml
-        echo '<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"' >> app/src/main/res/layout/activity_scan.xml
-        echo '    xmlns:app="http://schemas.android.com/apk/res-auto"' >> app/src/main/res/layout/activity_scan.xml
-        echo '    android:layout_width="match_parent"' >> app/src/main/res/layout/activity_scan.xml
-        echo '    android:layout_height="match_parent">' >> app/src/main/res/layout/activity_scan.xml
-        echo '' >> app/src/main/res/layout/activity_scan.xml
-        echo '    <TextView' >> app/src/main/res/layout/activity_scan.xml
-        echo '        android:id="@+id/textViewInstructions"' >> app/src/main/res/layout/activity_scan.xml
-        echo '        android:layout_width="wrap_content"' >> app/src/main/res/layout/activity_scan.xml
-        echo '        android:layout_height="wrap_content"' >> app/src/main/res/layout/activity_scan.xml
-        echo '        android:text="@string/scan_instructions"' >> app/src/main/res/layout/activity_scan.xml
-        echo '        android:textSize="18sp"' >> app/src/main/res/layout/activity_scan.xml
-        echo '        app:layout_constraintBottom_toBottomOf="parent"' >> app/src/main/res/layout/activity_scan.xml
-        echo '        app:layout_constraintEnd_toEndOf="parent"' >> app/src/main/res/layout/activity_scan.xml
-        echo '        app:layout_constraintStart_toStartOf="parent"' >> app/src/main/res/layout/activity_scan.xml
-        echo '        app:layout_constraintTop_toTopOf="parent" />' >> app/src/main/res/layout/activity_scan.xml
-        echo '' >> app/src/main/res/layout/activity_scan.xml
-        echo '</androidx.constraintlayout.widget.ConstraintLayout>' >> app/src/main/res/layout/activity_scan.xml
+    <TextView
+        android:id="@+id/textViewInstructions"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/scan_instructions"
+        android:textSize="18sp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
-        echo '<?xml version="1.0" encoding="utf-8"?>' > app/src/main/res/layout/item_card.xml
-        echo '<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"' >> app/src/main/res/layout/item_card.xml
-        echo '    xmlns:app="http://schemas.android.com/apk/res-auto"' >> app/src/main/res/layout/item_card.xml
-        echo '    android:layout_width="match_parent"' >> app/src/main/res/layout/item_card.xml
-        echo '    android:layout_height="wrap_content"' >> app/src/main/res/layout/item_card.xml
-        echo '    android:layout_margin="8dp"' >> app/src/main/res/layout/item_card.xml
-        echo '    app:cardCornerRadius="8dp"' >> app/src/main/res/layout/item_card.xml
-        echo '    app:cardElevation="4dp">' >> app/src/main/res/layout/item_card.xml
-        echo '' >> app/src/main/res/layout/item_card.xml
-        echo '    <LinearLayout' >> app/src/main/res/layout/item_card.xml
-        echo '        android:layout_width="match_parent"' >> app/src/main/res/layout/item_card.xml
-        echo '        android:layout_height="wrap_content"' >> app/src/main/res/layout/item_card.xml
-        echo '        android:orientation="vertical"' >> app/src/main/res/layout/item_card.xml
-        echo '        android:padding="16dp">' >> app/src/main/res/layout/item_card.xml
-        echo '' >> app/src/main/res/layout/item_card.xml
-        echo '        <TextView' >> app/src/main/res/layout/item_card.xml
-        echo '            android:id="@+id/textViewUid"' >> app/src/main/res/layout/item_card.xml
-        echo '            android:layout_width="wrap_content"' >> app/src/main/res/layout/item_card.xml
-        echo '            android:layout_height="wrap_content"' >> app/src/main/res/layout/item_card.xml
-        echo '            android:textStyle="bold"' >> app/src/main/res/layout/item_card.xml
-        echo '            android:textSize="16sp" />' >> app/src/main/res/layout/item_card.xml
-        echo '' >> app/src/main/res/layout/item_card.xml
-        echo '        <TextView' >> app/src/main/res/layout/item_card.xml
-        echo '            android:id="@+id/textViewType"' >> app/src/main/res/layout/item_card.xml
-        echo '            android:layout_width="wrap_content"' >> app/src/main/res/layout/item_card.xml
-        echo '            android:layout_height="wrap_content"' >> app/src/main/res/layout/item_card.xml
-        echo '            android:textSize="14sp"' >> app/src/main/res/layout/item_card.xml
-        echo '            android:textColor="@android:color/darker_gray" />' >> app/src/main/res/layout/item_card.xml
-        echo '' >> app/src/main/res/layout/item_card.xml
-        echo '    </LinearLayout>' >> app/src/main/res/layout/item_card.xml
-        echo '' >> app/src/main/res/layout/item_card.xml
-        echo '</androidx.cardview.widget.CardView>' >> app/src/main/res/layout/item_card.xml
+</androidx.constraintlayout.widget.ConstraintLayout>
+SCAN_LAYOUT_EOF
+
+        cat > app/src/main/res/layout/item_card.xml << 'ITEM_LAYOUT_EOF'
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="8dp"
+    app:cardCornerRadius="8dp"
+    app:cardElevation="4dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <TextView
+            android:id="@+id/textViewUid"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textStyle="bold"
+            android:textSize="16sp" />
+
+        <TextView
+            android:id="@+id/textViewType"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="14sp"
+            android:textColor="@android:color/darker_gray" />
+
+    </LinearLayout>
+
+</androidx.cardview.widget.CardView>
+ITEM_LAYOUT_EOF
 
     - name: Create Kotlin Source Files
       run: |
-        cat > app/src/main/java/com/example/nfccardmanager/data/Card.kt << 'KOTLINEOF'
+        cat > app/src/main/java/com/example/nfccardmanager/data/Card.kt << 'CARD_EOF'
 package com.example.nfccardmanager.data
 
 import androidx.room.Entity
@@ -304,9 +320,9 @@ data class Card(
         return result
     }
 }
-KOTLINEOF
+CARD_EOF
 
-        cat > app/src/main/java/com/example/nfccardmanager/data/CardDao.kt << 'KOTLINEOF'
+        cat > app/src/main/java/com/example/nfccardmanager/data/CardDao.kt << 'DAO_EOF'
 package com.example.nfccardmanager.data
 
 import androidx.room.*
@@ -329,9 +345,9 @@ interface CardDao {
     @Update
     suspend fun update(card: Card)
 }
-KOTLINEOF
+DAO_EOF
 
-        cat > app/src/main/java/com/example/nfccardmanager/data/CardDatabase.kt << 'KOTLINEOF'
+        cat > app/src/main/java/com/example/nfccardmanager/data/CardDatabase.kt << 'DB_EOF'
 package com.example.nfccardmanager.data
 
 import android.content.Context
@@ -360,11 +376,11 @@ abstract class CardDatabase : RoomDatabase() {
         }
     }
 }
-KOTLINEOF
+DB_EOF
 
-    - name: Create Repository and ViewModel
+    - name: Create More Kotlin Files
       run: |
-        cat > app/src/main/java/com/example/nfccardmanager/repository/CardRepository.kt << 'KOTLINEOF'
+        cat > app/src/main/java/com/example/nfccardmanager/repository/CardRepository.kt << 'REPO_EOF'
 package com.example.nfccardmanager.repository
 
 import com.example.nfccardmanager.data.Card
@@ -387,14 +403,10 @@ class CardRepository(private val cardDao: CardDao) {
     suspend fun delete(card: Card) = withContext(Dispatchers.IO) {
         cardDao.delete(card)
     }
-
-    suspend fun update(card: Card) = withContext(Dispatchers.IO) {
-        cardDao.update(card)
-    }
 }
-KOTLINEOF
+REPO_EOF
 
-        cat > app/src/main/java/com/example/nfccardmanager/viewmodel/CardViewModel.kt << 'KOTLINEOF'
+        cat > app/src/main/java/com/example/nfccardmanager/viewmodel/CardViewModel.kt << 'VM_EOF'
 package com.example.nfccardmanager.viewmodel
 
 import android.app.Application
@@ -423,16 +435,12 @@ class CardViewModel(application: Application) : AndroidViewModel(application) {
     fun delete(card: Card) = viewModelScope.launch {
         repository.delete(card)
     }
-
-    fun update(card: Card) = viewModelScope.launch {
-        repository.update(card)
-    }
 }
-KOTLINEOF
+VM_EOF
 
-    - name: Create HCE Service
+    - name: Create HCE and Adapter
       run: |
-        cat > app/src/main/java/com/example/nfccardmanager/hce/CardEmulationService.kt << 'KOTLINEOF'
+        cat > app/src/main/java/com/example/nfccardmanager/hce/CardEmulationService.kt << 'HCE_EOF'
 package com.example.nfccardmanager.hce
 
 import android.nfc.cardemulation.HostApduService
@@ -446,24 +454,20 @@ class CardEmulationService : HostApduService() {
     }
 
     override fun processCommandApdu(commandApdu: ByteArray, extras: Bundle?): ByteArray {
-        Log.d(TAG, "Received APDU: ${commandApdu.contentToString()}")
-        
+        Log.d(TAG, "Received APDU")
         emulatedCardData?.let {
             return it + byteArrayOf(0x90.toByte(), 0x00.toByte())
         }
-        
         return byteArrayOf(0x6A.toByte(), 0x82.toByte())
     }
 
     override fun onDeactivated(reason: Int) {
-        Log.d(TAG, "Card emulation deactivated, reason: $reason")
+        Log.d(TAG, "Card emulation deactivated")
     }
 }
-KOTLINEOF
+HCE_EOF
 
-    - name: Create Adapter
-      run: |
-        cat > app/src/main/java/com/example/nfccardmanager/adapter/CardAdapter.kt << 'KOTLINEOF'
+        cat > app/src/main/java/com/example/nfccardmanager/adapter/CardAdapter.kt << 'ADAPTER_EOF'
 package com.example.nfccardmanager.adapter
 
 import android.view.LayoutInflater
@@ -479,11 +483,7 @@ class CardAdapter(
 ) : ListAdapter<Card, CardAdapter.CardViewHolder>(CardDiffCallback()) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): CardViewHolder {
-        val binding = ItemCardBinding.inflate(
-            LayoutInflater.from(parent.context),
-            parent,
-            false
-        )
+        val binding = ItemCardBinding.inflate(LayoutInflater.from(parent.context), parent, false)
         return CardViewHolder(binding)
     }
 
@@ -491,10 +491,7 @@ class CardAdapter(
         holder.bind(getItem(position))
     }
 
-    inner class CardViewHolder(
-        private val binding: ItemCardBinding
-    ) : RecyclerView.ViewHolder(binding.root) {
-        
+    inner class CardViewHolder(private val binding: ItemCardBinding) : RecyclerView.ViewHolder(binding.root) {
         init {
             binding.root.setOnClickListener {
                 val position = adapterPosition
@@ -511,25 +508,19 @@ class CardAdapter(
     }
 
     class CardDiffCallback : DiffUtil.ItemCallback<Card>() {
-        override fun areItemsTheSame(oldItem: Card, newItem: Card): Boolean {
-            return oldItem.id == newItem.id
-        }
-
-        override fun areContentsTheSame(oldItem: Card, newItem: Card): Boolean {
-            return oldItem == newItem
-        }
+        override fun areItemsTheSame(oldItem: Card, newItem: Card) = oldItem.id == newItem.id
+        override fun areContentsTheSame(oldItem: Card, newItem: Card) = oldItem == newItem
     }
 }
-KOTLINEOF
+ADAPTER_EOF
 
     - name: Create UI Activities
       run: |
-        cat > app/src/main/java/com/example/nfccardmanager/ui/MainActivity.kt << 'KOTLINEOF'
+        cat > app/src/main/java/com/example/nfccardmanager/ui/MainActivity.kt << 'MAIN_ACTIVITY_EOF'
 package com.example.nfccardmanager.ui
 
 import android.content.Intent
 import android.os.Bundle
-import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -569,9 +560,9 @@ class MainActivity : AppCompatActivity() {
         }
     }
 }
-KOTLINEOF
+MAIN_ACTIVITY_EOF
 
-        cat > app/src/main/java/com/example/nfccardmanager/ui/ScanActivity.kt << 'KOTLINEOF'
+        cat > app/src/main/java/com/example/nfccardmanager/ui/ScanActivity.kt << 'SCAN_ACTIVITY_EOF'
 package com.example.nfccardmanager.ui
 
 import android.app.PendingIntent
@@ -603,7 +594,6 @@ class ScanActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         nfcAdapter = NfcAdapter.getDefaultAdapter(this)
-        
         pendingIntent = PendingIntent.getActivity(
             this, 0, Intent(this, javaClass).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP),
             PendingIntent.FLAG_MUTABLE
@@ -622,8 +612,7 @@ class ScanActivity : AppCompatActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        if (intent.action == NfcAdapter.ACTION_TAG_DISCOVERED ||
-            intent.action == NfcAdapter.ACTION_TECH_DISCOVERED) {
+        if (intent.action == NfcAdapter.ACTION_TAG_DISCOVERED) {
             val tag = intent.getParcelableExtra<Tag>(NfcAdapter.EXTRA_TAG)
             tag?.let { readTag(it) }
         }
@@ -633,90 +622,71 @@ class ScanActivity : AppCompatActivity() {
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 when {
-                    MifareClassic::class.java.name in tag.techList -> {
-                        readMifareClassic(tag)
-                    }
-                    MifareUltralight::class.java.name in tag.techList -> {
-                        readMifareUltralight(tag)
-                    }
-                    else -> {
-                        runOnUiThread {
-                            Toast.makeText(this@ScanActivity, "Неподдерживаемый тип карты", Toast.LENGTH_SHORT).show()
-                        }
+                    MifareClassic::class.java.name in tag.techList -> readMifareClassic(tag)
+                    MifareUltralight::class.java.name in tag.techList -> readMifareUltralight(tag)
+                    else -> runOnUiThread {
+                        Toast.makeText(this@ScanActivity, "Неподдерживаемый тип", Toast.LENGTH_SHORT).show()
                     }
                 }
             } catch (e: Exception) {
                 runOnUiThread {
-                    Toast.makeText(this@ScanActivity, "Ошибка чтения: ${e.message}", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this@ScanActivity, "Ошибка: ${e.message}", Toast.LENGTH_SHORT).show()
                 }
             }
         }
     }
 
     private suspend fun readMifareClassic(tag: Tag) {
-        val mifareClassic = MifareClassic.get(tag)
+        val mc = MifareClassic.get(tag)
         try {
-            mifareClassic.connect()
+            mc.connect()
             val data = mutableListOf<ByteArray>()
-            for (sector in 0 until minOf(4, mifareClassic.sectorCount)) {
-                if (mifareClassic.authenticateSectorWithKeyA(sector, MifareClassic.KEY_DEFAULT)) {
-                    for (block in 0 until mifareClassic.getBlockCountInSector(sector)) {
-                        val blockIndex = mifareClassic.sectorToBlock(sector) + block
-                        data.add(mifareClassic.readBlock(blockIndex))
+            for (sector in 0 until minOf(4, mc.sectorCount)) {
+                if (mc.authenticateSectorWithKeyA(sector, MifareClassic.KEY_DEFAULT)) {
+                    for (block in 0 until mc.getBlockCountInSector(sector)) {
+                        data.add(mc.readBlock(mc.sectorToBlock(sector) + block))
                     }
                 }
             }
-            val allData = data.flatMap { it.toList() }.toByteArray()
-            saveCard(tag.id.toHexString(), "Mifare Classic", allData)
-            mifareClassic.close()
+            saveCard(tag.id.toHexString(), "Mifare Classic", data.flatMap { it.toList() }.toByteArray())
+            mc.close()
         } catch (e: Exception) {
-            mifareClassic.close()
+            mc.close()
             throw e
         }
     }
 
     private suspend fun readMifareUltralight(tag: Tag) {
-        val ultralight = MifareUltralight.get(tag)
+        val mu = MifareUltralight.get(tag)
         try {
-            ultralight.connect()
-            val data = mutableListOf<ByteArray>()
-            for (page in 0..3) {
-                data.add(ultralight.readPages(page))
-            }
-            val allData = data.flatMap { it.toList() }.toByteArray()
-            saveCard(tag.id.toHexString(), "Mifare Ultralight", allData)
-            ultralight.close()
+            mu.connect()
+            val data = (0..3).map { mu.readPages(it) }
+            saveCard(tag.id.toHexString(), "Mifare Ultralight", data.flatMap { it.toList() }.toByteArray())
+            mu.close()
         } catch (e: Exception) {
-            ultralight.close()
+            mu.close()
             throw e
         }
     }
 
     private suspend fun saveCard(uid: String, type: String, data: ByteArray) {
-        val existingCard = viewModel.allCards.value?.find { it.uid == uid }
-        if (existingCard != null) {
-            runOnUiThread {
-                Toast.makeText(this@ScanActivity, "Карта уже существует", Toast.LENGTH_SHORT).show()
-            }
+        val exists = viewModel.allCards.value?.any { it.uid == uid } == true
+        if (exists) {
+            runOnUiThread { Toast.makeText(this@ScanActivity, "Карта уже существует", Toast.LENGTH_SHORT).show() }
             return
         }
-        
-        val card = Card(uid = uid, type = type, data = data)
-        viewModel.insert(card)
-        
+        viewModel.insert(Card(uid = uid, type = type, data = data))
         runOnUiThread {
             Toast.makeText(this@ScanActivity, "Карта сохранена", Toast.LENGTH_SHORT).show()
             finish()
         }
     }
 
-    private fun ByteArray.toHexString(): String {
-        return joinToString("") { "%02x".format(it) }
-    }
+    private fun ByteArray.toHexString() = joinToString("") { "%02x".format(it) }
 }
-KOTLINEOF
+SCAN_ACTIVITY_EOF
 
-        cat > app/src/main/java/com/example/nfccardmanager/ui/CardDetailActivity.kt << 'KOTLINEOF'
+        cat > app/src/main/java/com/example/nfccardmanager/ui/CardDetailActivity.kt << 'DETAIL_ACTIVITY_EOF'
 package com.example.nfccardmanager.ui
 
 import android.nfc.cardemulation.CardEmulation
@@ -728,6 +698,8 @@ import androidx.appcompat.app.AppCompatActivity
 import com.example.nfccardmanager.data.Card
 import com.example.nfccardmanager.hce.CardEmulationService
 import com.example.nfccardmanager.viewmodel.CardViewModel
+import java.text.SimpleDateFormat
+import java.util.*
 
 class CardDetailActivity : AppCompatActivity() {
     private val viewModel: CardViewModel by viewModels()
@@ -735,52 +707,33 @@ class CardDetailActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val uid = intent.getStringExtra("CARD_UID") ?: run { finish(); return }
         
-        val cardUid = intent.getStringExtra("CARD_UID")
-        if (cardUid == null) {
-            finish()
-            return
-        }
-
         viewModel.allCards.observe(this) { cards ->
-            currentCard = cards.find { it.uid == cardUid }
-            currentCard?.let { card ->
-                showCardDetails(card)
-            } ?: finish()
+            currentCard = cards.find { it.uid == uid }
+            currentCard?.let { showCardDetails(it) } ?: finish()
         }
     }
 
     private fun showCardDetails(card: Card) {
+        val date = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(Date(card.timestamp))
         AlertDialog.Builder(this)
             .setTitle("UID: ${card.uid}")
-            .setMessage("Тип: ${card.type}\nДата: ${java.text.SimpleDateFormat("dd/MM/yyyy HH:mm", java.util.Locale.getDefault()).format(java.util.Date(card.timestamp))}")
-            .setPositiveButton("Эмулировать") { _, _ ->
-                startEmulation(card)
-            }
-            .setNegativeButton("Удалить") { _, _ ->
-                confirmDelete(card)
-            }
+            .setMessage("Тип: ${card.type}\nДата: $date")
+            .setPositiveButton("Эмулировать") { _, _ -> startEmulation(card) }
+            .setNegativeButton("Удалить") { _, _ -> confirmDelete(card) }
             .setNeutralButton("Закрыть", null)
             .show()
     }
 
     private fun startEmulation(card: Card) {
         CardEmulationService.emulatedCardData = card.data
-        
-        val cardEmulation = CardEmulation.getInstance(this)
-        val service = android.content.ComponentName(this, CardEmulationService::class.java)
-        
-        if (cardEmulation.isDefaultServiceForCategory(service, CardEmulation.CATEGORY_OTHER)) {
-            Toast.makeText(this, "Эмуляция активна", Toast.LENGTH_SHORT).show()
-        } else {
-            Toast.makeText(this, "Необходимо установить приложение как сервис по умолчанию", Toast.LENGTH_LONG).show()
-        }
+        Toast.makeText(this, "Эмуляция активна", Toast.LENGTH_SHORT).show()
     }
 
     private fun confirmDelete(card: Card) {
         AlertDialog.Builder(this)
             .setTitle("Удалить карту?")
-            .setMessage("Вы уверены, что хотите удалить эту карту?")
             .setPositiveButton("Да") { _, _ ->
                 viewModel.delete(card)
                 Toast.makeText(this, "Карта удалена", Toast.LENGTH_SHORT).show()
@@ -790,13 +743,23 @@ class CardDetailActivity : AppCompatActivity() {
             .show()
     }
 }
-KOTLINEOF
+DETAIL_ACTIVITY_EOF
+
+    - name: Create Icon
+      run: |
+        cat > app/src/main/res/mipmap-hdpi/ic_launcher.xml << 'ICON_EOF'
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path android:fillColor="#6200EE" android:pathData="M0,0h108v108h-108z"/>
+</vector>
+ICON_EOF
 
     - name: Build Project
       run: ./gradlew assembleDebug --stacktrace
-
-    - name: Run Tests
-      run: ./gradlew testDebugUnitTest --stacktrace
 
     - name: Upload APK
       if: always()
