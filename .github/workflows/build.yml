@@ -63,7 +63,11 @@ task clean(type: Delete) {
     delete rootProject.buildDir
 }
 EOF
-          
+        fi
+
+    - name: Create gradlew script
+      run: |
+        if [ ! -f "gradlew" ]; then
           mkdir -p gradle/wrapper
           cat > gradle/wrapper/gradle-wrapper.properties << 'EOF'
 distributionBase=GRADLE_USER_HOME
@@ -72,11 +76,7 @@ distributionUrl=https\://services.gradle.org/distributions/gradle-8.0-bin.zip
 zipStoreBase=GRADLE_USER_HOME
 zipStorePath=wrapper/dists
 EOF
-        fi
 
-    - name: Create gradlew script
-      run: |
-        if [ ! -f "gradlew" ]; then
           cat > gradlew << 'EOF'
 #!/bin/sh
 
@@ -243,14 +243,6 @@ EOF
     - name: Make gradlew executable
       run: |
         if [ -f "./gradlew" ]; then
-          chmod +x ./gradlew
-        fi
-
-    - name: Initialize Gradle wrapper if needed
-      run: |
-        if [ ! -f "./gradlew" ]; then
-          echo "Initializing Gradle wrapper"
-          gradle wrapper --gradle-version 8.0
           chmod +x ./gradlew
         fi
 
