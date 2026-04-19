@@ -27,70 +27,91 @@ jobs:
         echo "Current working directory: $(pwd)"
         echo "Root directory contents:"
         ls -la
-        echo "Finding all Gradle related files:"
-        find . -name "*gradle*" -type f 2>/dev/null || echo "No Gradle files found"
+        echo "All directories and files:"
+        find . -type f -name "*.gradle*" | head -20
+        echo "Looking for root project files:"
+        find . -maxdepth 3 -name "settings.gradle*" -o -name "build.gradle*" 2>/dev/null
+
+    - name: Find project root and setup
+      run: |
+        # Look for the main project root (where settings.gradle is)
+        ROOT_DIR=$(find . -name "settings.gradle*" -type f -print -quit 2>/dev/null | head -1 | xargs dirname 2>/dev/null)
+        if [ -n "$ROOT_DIR" ] && [ "$ROOT_DIR" != "." ]; then
+          PROJECT_ROOT=$(dirname "$ROOT_DIR")
+          echo "Found project root at: $PROJECT_ROOT"
+        else
+          # Try to find any build.gradle in parent directories
+          BUILD_FILE=$(find . -name "build.gradle*" -type f | grep -E "(^|/)build\.gradle" | head -1)
+          if [ -n "$BUILD_FILE" ]; then
+            PROJECT_ROOT=$(dirname "$BUILD_FILE")
+            echo "Found build file at: $BUILD_FILE, project root: $PROJECT_ROOT"
+          else
+            PROJECT_ROOT="."
+            echo "Using current directory as project root"
+          fi
+        fi
+        echo "PROJECT_ROOT=$PROJECT_ROOT" >> $GITHUB_ENV
 
     - name: Setup Gradle
       uses: gradle/gradle-build-action@v2
 
+    - name: Make gradlew executable if exists
+      run: |
+        cd "$PROJECT_ROOT"
+        if [ -f "./gradlew" ]; then
+          echo "Making gradlew executable"
+          chmod +x ./gradlew
+        elif [ -f "../gradlew" ]; then
+          echo "Making ../gradlew executable"
+          chmod +x ../gradlew
+        fi
+
     - name: Build Project
       run: |
-        echo "Searching for project root..."
-        # Look for settings.gradle or build.gradle to find the actual project root
-        SETTINGS_FILE=$(find . -name "settings.gradle*" -type f -print -quit 2>/dev/null)
-        
-        if [ -n "$SETTINGS_FILE" ]; then
-          PROJECT_DIR=$(dirname "$SETTINGS_FILE")
-          echo "Found settings file at: $SETTINGS_FILE"
-          echo "Project directory: $PROJECT_DIR"
-          cd "$PROJECT_DIR"
-        else
-          BUILD_FILE=$(find . -name "build.gradle*" -type f -print -quit 2>/dev/null)
-          if [ -n "$BUILD_FILE" ]; then
-            PROJECT_DIR=$(dirname "$BUILD_FILE")
-            echo "Found build file at: $BUILD_FILE"
-            echo "Project directory: $PROJECT_DIR"
-            cd "$PROJECT_DIR"
-          fi
-        fi
-        
-        echo "Current directory contents:"
+        cd "$PROJECT_ROOT"
+        echo "Current directory: $(pwd)"
+        echo "Contents:"
         ls -la
         
-        # Check for gradlew first
+        # Try different approaches to build
         if [ -f "./gradlew" ]; then
-          echo "Using gradlew wrapper"
-          chmod +x ./gradlew
+          echo "Building with ./gradlew"
           ./gradlew assembleDebug --stacktrace
         elif [ -f "../gradlew" ]; then
-          echo "Using gradlew wrapper from parent directory"
-          chmod +x ../gradlew
+          echo "Building with ../gradlew"
           cd ..
           ./gradlew assembleDebug --stacktrace
+        elif [ -f "./gradle" ] || command -v gradle >/dev/null 2>&1; then
+          echo "Building with gradle command"
+          gradle assembleDebug --stacktrace
         else
-          echo "No gradlew found, trying direct gradle command"
+          echo "Creating basic gradle wrapper"
+          # Try to initialize gradle if nothing exists
+          gradle init --type basic
           gradle assembleDebug --stacktrace
         fi
 
-    - name: Run Tests and Lint
+    - name: Run Tests
       run: |
-        # Find and navigate to the correct directory again
-        SETTINGS_FILE=$(find . -name "settings.gradle*" -type f -print -quit 2>/dev/null)
-        if [ -n "$SETTINGS_FILE" ]; then
-          cd "$(dirname "$SETTINGS_FILE")"
-        else
-          BUILD_FILE=$(find . -name "build.gradle*" -type f -print -quit 2>/dev/null)
-          if [ -n "$BUILD_FILE" ]; then
-            cd "$(dirname "$BUILD_FILE")"
-          fi
-        fi
-        
-        # Run tests and lint
+        cd "$PROJECT_ROOT"
         if [ -f "./gradlew" ]; then
           ./gradlew testDebugUnitTest --stacktrace
-          ./gradlew lintDebug --stacktrace
+        elif [ -f "../gradlew" ]; then
+          cd ..
+          ./gradlew testDebugUnitTest --stacktrace
         else
           gradle testDebugUnitTest --stacktrace
+        fi
+
+    - name: Run Lint
+      run: |
+        cd "$PROJECT_ROOT"
+        if [ -f "./gradlew" ]; then
+          ./gradlew lintDebug --stacktrace
+        elif [ -f "../gradlew" ]; then
+          cd ..
+          ./gradlew lintDebug --stacktrace
+        else
           gradle lintDebug --stacktrace
         fi
 
