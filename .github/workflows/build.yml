@@ -21,25 +21,72 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
 
-    - name: Create Gradle Files
+    - name: Create Settings Gradle
       run: |
-        echo 'rootProject.name = "CardHolder"' > settings.gradle.kts
-        echo 'include(":app")' >> settings.gradle.kts
-        
+        cat > settings.gradle.kts << 'EOF'
+pluginManagement {
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+
+rootProject.name = "CardHolder"
+include(":app")
+EOF
+
+    - name: Create Gradle Wrapper
+      run: |
         mkdir -p gradle/wrapper
-        echo 'distributionBase=GRADLE_USER_HOME' > gradle/wrapper/gradle-wrapper.properties
-        echo 'distributionPath=wrapper/dists' >> gradle/wrapper/gradle-wrapper.properties
-        echo 'distributionUrl=https\://services.gradle.org/distributions/gradle-8.0-bin.zip' >> gradle/wrapper/gradle-wrapper.properties
-        echo 'networkTimeout=10000' >> gradle/wrapper/gradle-wrapper.properties
-        echo 'validateDistributionUrl=true' >> gradle/wrapper/gradle-wrapper.properties
-        echo 'zipStoreBase=GRADLE_USER_HOME' >> gradle/wrapper/gradle-wrapper.properties
-        echo 'zipStorePath=wrapper/dists' >> gradle/wrapper/gradle-wrapper.properties
+        cat > gradle/wrapper/gradle-wrapper.properties << 'EOF'
+distributionBase=GRADLE_USER_HOME
+distributionPath=wrapper/dists
+distributionUrl=https\://services.gradle.org/distributions/gradle-8.0-bin.zip
+networkTimeout=10000
+zipStoreBase=GRADLE_USER_HOME
+zipStorePath=wrapper/dists
+EOF
+
+    - name: Create Gradlew Script
+      run: |
+        cat > gradlew << 'EOFSCRIPT'
+#!/bin/sh
+app_path=$0
+while [ -h "$app_path" ]; do
+    ls=$( ls -ld "$app_path" )
+    link=${ls#*' -> '}
+    case $link in
+      /*) app_path=$link ;;
+      *) app_path=${app_path%/*}/$link ;;
+    esac
+done
+APP_BASE_NAME=${0##*/}
+APP_HOME=$( cd "${APP_HOME:-./}" > /dev/null && pwd -P ) || exit
+CLASSPATH=$APP_HOME/gradle/wrapper/gradle-wrapper.jar
+JAVACMD=java
+set -- \
+    "-Dorg.gradle.appname=$APP_BASE_NAME" \
+    -classpath "$CLASSPATH" \
+    org.gradle.wrapper.GradleWrapperMain \
+    "$@"
+exec "$JAVACMD" "$@"
+EOFSCRIPT
+        chmod +x gradlew
 
     - name: Build Project
-      run: gradle assembleDebug --stacktrace
+      run: ./gradlew assembleDebug --stacktrace
 
     - name: Run Tests
-      run: gradle testDebugUnitTest --stacktrace
+      run: ./gradlew testDebugUnitTest --stacktrace
 
     - name: Upload APK
       if: always()
